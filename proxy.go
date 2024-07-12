@@ -99,6 +99,9 @@ func (p *Proxy) forward(srcConn net.Conn) error {
 			return err
 		}
 		tlsSrcConn, err = p.handshake(srcConn)
+		if err != nil {
+			return err
+		}
 	default:
 		_, err = srcConn.Write([]byte{'N'})
 		if err != nil {
