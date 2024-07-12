@@ -1,16 +1,25 @@
 ```go
+package main
+import (
+	"crypto/tls"
+	"fmt"
+	"github.com/tlsproxy/pgproxy"
+)
+
 func main() {
 	proxyConfig := &pgproxy.ProxyConfig{
 		Src: "0.0.0.0:7777",
-		Dst: "192.168.1.1:5432",
+		Dst: "192.168.1.11:32432",
 		HandleError: func(err error) {
 			fmt.Printf("%+v", err)
 		},
-		HandleRead: func(b []byte, w tls.ConnectionState) error {
-			fmt.Println(w.PeerCertificates[0].Issuer)
+		HandleRead: func(b []byte) error {
 			return nil
 		},
 		HandleWrite: nil,
+		HandleClientState: func(w tls.ConnectionState) error {
+			return nil
+		},
 	}
 
 	tlsConfig := &pgproxy.TlsConfig{
@@ -29,5 +38,4 @@ func main() {
 		panic(err)
 	}
 }
-
 ```
