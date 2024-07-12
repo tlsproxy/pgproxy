@@ -9,7 +9,7 @@ import (
 func main() {
 	proxyConfig := &pgproxy.ProxyConfig{
 		Src: "0.0.0.0:7777",
-		Dst: "192.168.1.11:32432",
+		Dst: "192.168.1.11:5432",
 		HandleError: func(err error) {
 			fmt.Printf("%+v", err)
 		},
