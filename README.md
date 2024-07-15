@@ -1,5 +1,6 @@
 ```go
 package main
+
 import (
 	"crypto/tls"
 	"fmt"
@@ -13,7 +14,7 @@ func main() {
 		HandleError: func(err error) {
 			fmt.Printf("%+v", err)
 		},
-		HandleRead: func(b []byte) error {
+		HandleRead: func(b []byte, state tls.ConnectionState) error {
 			return nil
 		},
 		HandleWrite: nil,
@@ -23,9 +24,9 @@ func main() {
 	}
 
 	tlsConfig := &pgproxy.TlsConfig{
-		ServerCert: "/ca/server.crt",
-		ServerKey:  "/ca/server.key",
-		CaCert:     "/ca/ca.crt",
+		ServerCert: "/Users/zeuszhao/Workspace/godev/study/ca/server.crt",
+		ServerKey:  "/Users/zeuszhao/Workspace/godev/study/ca/server.key",
+		CaCert:     "/Users/zeuszhao/Workspace/godev/study/ca/ca.crt",
 	}
 
 	proxy, err := pgproxy.NewProxy(proxyConfig, tlsConfig)

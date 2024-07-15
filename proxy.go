@@ -18,8 +18,8 @@ type ProxyConfig struct {
 	Dst string
 
 	HandleError       func(err error)
-	HandleRead        func(b []byte) error
-	HandleWrite       func(b []byte) error
+	HandleRead        func(b []byte, s tls.ConnectionState) error
+	HandleWrite       func(b []byte, s tls.ConnectionState) error
 	HandleClientState func(w tls.ConnectionState) error
 }
 
@@ -34,11 +34,11 @@ func NewProxy(config *ProxyConfig, tlsConfig *TlsConfig) (*Proxy, error) {
 	}
 
 	if config.HandleWrite == nil {
-		config.HandleWrite = func(b []byte) error { return nil }
+		config.HandleWrite = func(b []byte, s tls.ConnectionState) error { return nil }
 	}
 
 	if config.HandleRead == nil {
-		config.HandleRead = func(b []byte) error { return nil }
+		config.HandleRead = func(b []byte, s tls.ConnectionState) error { return nil }
 	}
 
 	if config.HandleClientState == nil {
@@ -109,7 +109,9 @@ func (p *Proxy) forward(srcConn net.Conn) error {
 		}
 		return ErrorNotSSLRequest
 	}
-	err = p.ProxyConfig.HandleClientState(tlsSrcConn.ConnectionState())
+
+	tlsState := tlsSrcConn.ConnectionState()
+	err = p.ProxyConfig.HandleClientState(tlsState)
 	if err != nil {
 		return err
 	}
@@ -120,8 +122,8 @@ func (p *Proxy) forward(srcConn net.Conn) error {
 	}
 	defer dstConn.Close()
 
-	tlsConn1 := &connReadWriteCloser{srcConn: tlsSrcConn, r: p.ProxyConfig.HandleRead, w: p.ProxyConfig.HandleWrite}
-	pgConn1 := &connReadWriteCloser{srcConn: dstConn, r: p.ProxyConfig.HandleRead, w: p.ProxyConfig.HandleWrite}
+	tlsConn1 := &connReadWriteCloser{srcConn: tlsSrcConn, r: p.ProxyConfig.HandleRead, w: p.ProxyConfig.HandleWrite, srcState: tlsState}
+	pgConn1 := &connReadWriteCloser{srcConn: dstConn, r: p.ProxyConfig.HandleRead, w: p.ProxyConfig.HandleWrite, srcState: tlsState}
 
 	c := make(chan error)
 	go func() {
@@ -152,8 +154,8 @@ func (p *Proxy) handshake(srcConn net.Conn) (*tls.Conn, error) {
 type connReadWriteCloser struct {
 	srcConn  net.Conn
 	srcState tls.ConnectionState
-	r        func(b []byte) error
-	w        func(b []byte) error
+	r        func(b []byte, s tls.ConnectionState) error
+	w        func(b []byte, s tls.ConnectionState) error
 }
 
 func (c *connReadWriteCloser) Read(p []byte) (int, error) {
@@ -161,7 +163,7 @@ func (c *connReadWriteCloser) Read(p []byte) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	err = c.r(p)
+	err = c.r(p, c.srcState)
 	if err != nil {
 		return 0, err
 	}
@@ -173,7 +175,7 @@ func (c *connReadWriteCloser) Write(p []byte) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	err = c.w(p)
+	err = c.w(p, c.srcState)
 	if err != nil {
 		return 0, err
 	}
