@@ -24,9 +24,9 @@ func main() {
 	}
 
 	tlsConfig := &pgproxy.TlsConfig{
-		ServerCert: "/Users/zeuszhao/Workspace/godev/study/ca/server.crt",
-		ServerKey:  "/Users/zeuszhao/Workspace/godev/study/ca/server.key",
-		CaCert:     "/Users/zeuszhao/Workspace/godev/study/ca/ca.crt",
+		ServerCert: "/ca/server.crt",
+		ServerKey:  "/ca/server.key",
+		CaCert:     "/ca/ca.crt",
 	}
 
 	proxy, err := pgproxy.NewProxy(proxyConfig, tlsConfig)
